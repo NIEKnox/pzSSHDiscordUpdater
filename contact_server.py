@@ -40,15 +40,15 @@ def return_active_players(address, port, username, password):
     players_left = {}
     for line in loglines:
         if entry_log in line:
-            splitline = line.split(" ")
-            player = str(splitline[3])[1:] + " " + str(splitline[4])[:-1]
+            splitline = line.split("\"")
+            player = str(splitline[1])
             if player not in players_entered:
                 players_entered[player] = 1
             else:
                 players_entered[player] += 1
         elif exit_log in line:
-            splitline = line.split(" ")
-            player = str(splitline[3])[1:] + " " + str(splitline[4])[:-1]
+            splitline = line.split("\"")
+            player = str(splitline[1])
             if player not in players_left:
                 players_left[player] = 1
             else:
