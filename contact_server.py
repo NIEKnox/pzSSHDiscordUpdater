@@ -1,4 +1,5 @@
-### Code written by NIEKnox on github, uploaded ~20:00 on 20th Nov 2024
+### Code written by NIEKnox on github, first uploaded ~20:00 on 20th Nov 2024
+# Last updated 23rd Nov 2024
 
 ### import packages
 import discord
@@ -20,49 +21,58 @@ def return_active_players(address, port, username, password):
     server.cwd("default/Logs/")
     # get list of files in Logs dir
     files_list = server.nlst()
+    # Initialize file name
+    file_name = None
     # find correct file by iterating through
     for file in files_list:
         if "user.txt" in file:
             file_name = file
 
-    # read file
-    r = BytesIO()
-    server.retrbinary('RETR ' + file_name, r.write)
-    loglines = r.getvalue().decode('utf-8')
-    # get individual lines
-    loglines = loglines.split(sep='\n')
-    # filter for entry and exit queries
-    entry_log = 'fully connected'
-    exit_log = 'disconnected player'
+    # if user.txt file hasn't been initialized, nobody has logged on since last update;
+    #   therefore nobody is online
+    if file_name is None:
+        print("user.txt file has not been initialized yet")
+        return []
+    # otherwise execute normally
+    else:
+        # read file
+        r = BytesIO()
+        server.retrbinary('RETR ' + file_name, r.write)
+        loglines = r.getvalue().decode('utf-8')
+        # get individual lines
+        loglines = loglines.split(sep='\n')
+        # filter for entry and exit queries
+        entry_log = 'fully connected'
+        exit_log = 'disconnected player'
 
-    # get dicts of
-    players_entered = {}
-    players_left = {}
-    for line in loglines:
-        if entry_log in line:
-            splitline = line.split("\"")
-            player = str(splitline[1])
-            if player not in players_entered:
-                players_entered[player] = 1
-            else:
-                players_entered[player] += 1
-        elif exit_log in line:
-            splitline = line.split("\"")
-            player = str(splitline[1])
+        # get dicts of
+        players_entered = {}
+        players_left = {}
+        for line in loglines:
+            if entry_log in line:
+                splitline = line.split("\"")
+                player = str(splitline[1])
+                if player not in players_entered:
+                    players_entered[player] = 1
+                else:
+                    players_entered[player] += 1
+            elif exit_log in line:
+                splitline = line.split("\"")
+                player = str(splitline[1])
+                if player not in players_left:
+                    players_left[player] = 1
+                else:
+                    players_left[player] += 1
+
+        currently_on_server = []
+        for player in players_entered:
+            # if player hasn't left, player must still be online!
             if player not in players_left:
-                players_left[player] = 1
-            else:
-                players_left[player] += 1
-
-    currently_on_server = []
-    for player in players_entered:
-        # if player hasn't left, player must still be online!
-        if player not in players_left:
-            currently_on_server.append(player)
-        # if number of entering events greater than number of leaving events, player must be online
-        elif players_entered[player] > players_left[player]:
-            currently_on_server.append(player)
-    return currently_on_server
+                currently_on_server.append(player)
+            # if number of entering events greater than number of leaving events, player must be online
+            elif players_entered[player] > players_left[player]:
+                currently_on_server.append(player)
+        return currently_on_server
 
 
 # define intents
@@ -91,7 +101,7 @@ current_time = None
 async def update_online():
     current_time = datetime.now().strftime('%H:%M')
     current_players = return_active_players(ftp_address, ftp_port, ftp_username, ftp_password)
-    print(current_players)
+    print(str(current_time), ": ", str(current_players))
     newcontent = "## Players online:\n"
     if len(current_players) == 0:
         newcontent += "None\n"
